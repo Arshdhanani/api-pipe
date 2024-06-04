@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        #result img {
+            max-width: 100%;
+            height: auto;
+            display: none; /* Hide the image initially */
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Processing App</h1>
+    <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" id="file-input" accept="image/*" required>
+        <button type="submit">Upload and Process Image</button>
+    </form>
+    <div id="result">
+        <h2>Processed Image:</h2>
+        <img id="output-image" src="" alt="Processed Image">
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadForm = document.getElementById('upload-form');
+            const fileInput = document.getElementById('file-input');
+            const outputImage = document.getElementById('output-image');
+
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+
+                try {
+                    const response = await fetch('http://localhost:8000/predict', { // Ensure the URL matches your backend
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to process image');
+                    }
+
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    outputImage.src = imageUrl;
+                    outputImage.style.display = 'block'; // Show the image
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error processing image. Please try again.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
