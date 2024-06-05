@@ -66,4 +66,4 @@ def index():
     return send_from_directory('templates', 'index.html')
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', port=8000)
+    application.run(host='0.0.0.0', port=80)
