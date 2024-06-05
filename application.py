@@ -1,15 +1,13 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory, abort
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from PIL import Image
 import numpy as np
 import cv2
 import io
 import onnxruntime as ort
-import logging
 
 application = Flask(__name__)
-CORS(application)  # Enable CORS for all routes, restrict in production
-application.logger.setLevel(logging.INFO)
+CORS(application)  # Enable CORS for all routes
 
 # Load ONNX model
 onnx_model_path = r'/var/app/current/model.onnx'
@@ -40,7 +38,6 @@ def predict_route():
     try:
         image = Image.open(image_file.stream)
     except IOError:
-        application.logger.error('Invalid image format or corrupted file.')
         return jsonify({'error': 'Invalid image format'}), 400
 
     # Preprocess the image
@@ -57,25 +54,16 @@ def predict_route():
     # Convert the processed image to bytes
     is_success, buffer = cv2.imencode(".png", resized_image)
     if not is_success:
-        application.logger.error('Failed to encode image.')
         return jsonify({'error': 'Failed to encode image'}), 500
     
     io_buf = io.BytesIO(buffer)
+
     return send_file(io_buf, mimetype='image/png')
+
 
 @application.route('/')
 def index():
     return send_from_directory('templates', 'index.html')
 
-@application.errorhandler(500)
-def handle_500(error):
-    application.logger.error('Server Error: %s', (error))
-    return jsonify({"error": "Internal server error"}), 500
-
-@application.errorhandler(Exception)
-def handle_exception(e):
-    application.logger.error('Unhandled Exception: %s', (e))
-    return jsonify({"error": "Something went wrong"}), 500
-
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', port=8000, debug=True)
+    application.run(host='0.0.0.0', port=8000)
