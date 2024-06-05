@@ -10,9 +10,6 @@ import logging
 application = Flask(__name__)
 CORS(application)  # Enable CORS for all routes
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
 # Load ONNX model with error handling
 try:
     onnx_model_path = r'/var/app/current/model.onnx'
