@@ -8,7 +8,7 @@ import onnxruntime as ort
 import logging
 
 application = Flask(__name__)
-CORS(application , origins='http://ebss-env.eba-wmpcqnqf.us-east-1.elasticbeanstalk.com')  # Enable CORS for all routes
+CORS(application , origins='http://ebss-env.eba-wmpcqnqf.us-east-1.elasticbeanstalk.com/predict')  # Enable CORS for all routes
 
 # Load ONNX model with error handling
 try:
