@@ -41,6 +41,10 @@
             background-color: #ccc;
             cursor: not-allowed;
         }
+
+        #error-message {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -52,12 +56,14 @@
     <div id="result">
         <h2>Processed Image:</h2>
         <img id="output-image" src="" alt="Processed Image">
+        <div id="error-message"></div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const uploadForm = document.getElementById('upload-form');
             const fileInput = document.getElementById('file-input');
             const outputImage = document.getElementById('output-image');
+            const errorMessage = document.getElementById('error-message');
 
             uploadForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -66,13 +72,17 @@
                 formData.append('image', fileInput.files[0]);
 
                 try {
-                    const response = await fetch('http://localhost:80/predict', { // Ensure the URL matches your backend
+                    errorMessage.textContent = '';
+                    outputImage.style.display = 'none'; // Hide the image during processing
+
+                    const response = await fetch('/predict', { // Use relative path for flexibility
                         method: 'POST',
                         body: formData
                     });
 
                     if (!response.ok) {
-                        throw new Error('Failed to process image');
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to process image');
                     }
 
                     const blob = await response.blob();
@@ -81,7 +91,7 @@
                     outputImage.style.display = 'block'; // Show the image
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Error processing image. Please try again.');
+                    errorMessage.textContent = error.message || 'Error processing image. Please try again.';
                 }
             });
         });
