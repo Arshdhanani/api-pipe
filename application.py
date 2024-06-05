@@ -5,13 +5,19 @@ import numpy as np
 import cv2
 import io
 import onnxruntime as ort
+import logging
 
 application = Flask(__name__)
 CORS(application)  # Enable CORS for all routes
 
-# Load ONNX model
-onnx_model_path = r'/var/app/current/model.onnx'
-ort_session = ort.InferenceSession(onnx_model_path)
+# Load ONNX model with error handling
+try:
+    onnx_model_path = r'/var/app/current/model.onnx'
+    ort_session = ort.InferenceSession(onnx_model_path)
+    logging.info("ONNX model loaded successfully.")
+except Exception as e:
+    logging.error(f"Failed to load ONNX model: {e}")
+    raise e
 
 def preprocess_image(image):
     # Resize and normalize the image
@@ -44,12 +50,20 @@ def predict_route():
     image_array = preprocess_image(image)
 
     # Predict using the ONNX model
-    prediction = predict(image_array)
+    try:
+        prediction = predict(image_array)
+    except Exception as e:
+        logging.error(f"Prediction error: {e}")
+        return jsonify({'error': 'Prediction failed'}), 500
 
     # Process the prediction to generate the output image
-    predicted_points = prediction[0].reshape(-1, 2).astype(int)
-    resized_image = cv2.resize(np.array(image), (224, 224))
-    cv2.polylines(resized_image, [predicted_points], isClosed=True, color=(0, 255, 0), thickness=1)
+    try:
+        predicted_points = prediction[0].reshape(-1, 2).astype(int)
+        resized_image = cv2.resize(np.array(image), (224, 224))
+        cv2.polylines(resized_image, [predicted_points], isClosed=True, color=(0, 255, 0), thickness=1)
+    except Exception as e:
+        logging.error(f"Image processing error: {e}")
+        return jsonify({'error': 'Image processing failed'}), 500
 
     # Convert the processed image to bytes
     is_success, buffer = cv2.imencode(".png", resized_image)
@@ -60,10 +74,9 @@ def predict_route():
 
     return send_file(io_buf, mimetype='image/png')
 
-
 @application.route('/')
 def index():
     return send_from_directory('templates', 'index.html')
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', port=8000)
+    application.run(host='0.0.0.0', port=80)
