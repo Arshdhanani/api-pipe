@@ -51,6 +51,10 @@
     <h1>Image Processing App</h1>
     <form id="upload-form" enctype="multipart/form-data">
         <input type="file" id="file-input" accept="image/*" required>
+        <label for="polyline-height-cm">Polyline Height (cm):</label>
+        <input type="number" id="polyline-height-cm" name="polyline-height-cm" required>
+        <label for="polyline-width-cm">Polyline Width (cm):</label>
+        <input type="number" id="polyline-width-cm" name="polyline-width-cm" required>
         <button type="submit">Upload and Process Image</button>
     </form>
     <div id="result">
@@ -62,6 +66,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const uploadForm = document.getElementById('upload-form');
             const fileInput = document.getElementById('file-input');
+            const polylineHeightInput = document.getElementById('polyline-height-cm');
+            const polylineWidthInput = document.getElementById('polyline-width-cm');
             const outputImage = document.getElementById('output-image');
             const errorMessage = document.getElementById('error-message');
 
@@ -70,6 +76,8 @@
 
                 const formData = new FormData();
                 formData.append('image', fileInput.files[0]);
+                formData.append('polyline_height_cm', polylineHeightInput.value);
+                formData.append('polyline_width_cm', polylineWidthInput.value);
 
                 try {
                     errorMessage.textContent = '';
