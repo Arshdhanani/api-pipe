@@ -128,6 +128,12 @@ def predict_route():
 
     return send_file(io_buf, mimetype='image/png')
 
+@application.route('/output')
+def output_images():
+    image_files = os.listdir(output_dir)
+    image_links = [f'<a href="/output/{filename}">{filename}</a>' for filename in image_files]
+    return '<br>'.join(image_links)
+
 @application.route('/output/<filename>')
 def output_image(filename):
     return send_from_directory(output_dir, filename)
