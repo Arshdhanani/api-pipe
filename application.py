@@ -8,19 +8,23 @@ import onnxruntime as ort
 import logging
 import os
 
-# Create directories
-input_dir = 'inputimages'
-output_dir = 'outputimages'
-os.makedirs(input_dir, exist_ok=True)
-os.makedirs(output_dir, exist_ok=True)
+# Constants
+INPUT_DIR = 'inputimages'
+OUTPUT_DIR = 'outputimages'
+DEFAULT_DPI = 72
 
-application = Flask(__name__)
-CORS(application)  # Enable CORS for all routes
+# Create directories if not exist
+os.makedirs(INPUT_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# Initialize Flask application
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Load ONNX model with error handling
 try:
-    onnx_model_path = r'/var/app/current/27.onnx'
-    ort_session = ort.InferenceSession(onnx_model_path)
+    ONNX_MODEL_PATH = '/var/app/current/27.onnx'
+    ort_session = ort.InferenceSession(ONNX_MODEL_PATH)
     logging.info("ONNX model loaded successfully.")
 except Exception as e:
     logging.error(f"Failed to load ONNX model: {e}")
@@ -39,16 +43,13 @@ def predict(image_array):
     ort_outs = ort_session.run(None, ort_inputs)
     return ort_outs[0]
 
-@application.route('/predict', methods=['GET', 'POST'])
+@app.route('/predict', methods=['POST'])
 def predict_route():
-    if request.method == 'GET':
-        return jsonify({'message': 'Send a POST request with an image to get predictions'}), 200
-    
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
     
     image_file = request.files['image']
-    input_image_path = os.path.join(input_dir, image_file.filename)
+    input_image_path = os.path.join(INPUT_DIR, image_file.filename)
     
     try:
         # Save the uploaded image to the inputimages directory
@@ -71,7 +72,7 @@ def predict_route():
     polyline_width_inch = polyline_width_cm / 2.54
 
     # Get image resolution in DPI (assuming same resolution for X and Y)
-    image_resolution_dpi = image.info.get('dpi', (72, 72))  # Default DPI if not specified
+    image_resolution_dpi = image.info.get('dpi', (DEFAULT_DPI, DEFAULT_DPI))
 
     # Convert inches to pixels using DPI
     polyline_height_px = int(polyline_height_inch * image_resolution_dpi[0])
@@ -124,13 +125,13 @@ def predict_route():
 
     return send_file(io_buf, mimetype='image/png')
 
-@application.route('/')
+@app.route('/')
 def index():
     return send_from_directory('templates', 'index.html')
 
 @app.route('/images/<filename>')
 def send_image(filename):
-    return send_from_directory('outputimages', filename)
+    return send_from_directory(OUTPUT_DIR, filename)
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=80)
