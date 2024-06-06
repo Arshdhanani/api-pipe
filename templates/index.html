@@ -3,104 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Processing App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        h1 {
-            color: #333;
-        }
-
-        form {
-            margin-bottom: 20px;
-        }
-
-        #result {
-            margin-top: 20px;
-        }
-
-        #result img {
-            max-width: 100%;
-            height: auto;
-            display: none; /* Hide the image initially */
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            background-color: #28a745;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        #error-message {
-            color: red;
-        }
-    </style>
+    <title>Image Prediction</title>
 </head>
 <body>
-    <h1>Image Processing App</h1>
-    <form id="upload-form" enctype="multipart/form-data">
-        <input type="file" id="file-input" accept="image/*" required>
-        <label for="polyline-height-cm">Polyline Height (cm):</label>
-        <input type="number" id="polyline-height-cm" name="polyline-height-cm" required>
-        <label for="polyline-width-cm">Polyline Width (cm):</label>
-        <input type="number" id="polyline-width-cm" name="polyline-width-cm" required>
-        <button type="submit">Upload and Process Image</button>
+    <h1>Image Prediction</h1>
+    <form id="imageForm">
+        <label for="imageUrl">Image URL:</label>
+        <input type="text" id="imageUrl" name="imageUrl" required>
+        <br>
+        <label for="polylineHeight">Polyline Height (cm):</label>
+        <input type="number" id="polylineHeight" name="polylineHeight" required>
+        <br>
+        <label for="polylineWidth">Polyline Width (cm):</label>
+        <input type="number" id="polylineWidth" name="polylineWidth" required>
+        <br>
+        <input type="submit" value="Predict">
     </form>
-    <div id="result">
-        <h2>Processed Image:</h2>
-        <img id="output-image" src="" alt="Processed Image">
-        <div id="error-message"></div>
-    </div>
+
+    <div id="predictionResult"></div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const uploadForm = document.getElementById('upload-form');
-            const fileInput = document.getElementById('file-input');
-            const polylineHeightInput = document.getElementById('polyline-height-cm');
-            const polylineWidthInput = document.getElementById('polyline-width-cm');
-            const outputImage = document.getElementById('output-image');
-            const errorMessage = document.getElementById('error-message');
+        document.getElementById("imageForm").addEventListener("submit", function(event) {
+            event.preventDefault();
 
-            uploadForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
+            let imageUrl = document.getElementById("imageUrl").value;
+            let polylineHeight = document.getElementById("polylineHeight").value;
+            let polylineWidth = document.getElementById("polylineWidth").value;
 
-                const formData = new FormData();
-                formData.append('image', fileInput.files[0]);
-                formData.append('polyline_height_cm', polylineHeightInput.value);
-                formData.append('polyline_width_cm', polylineWidthInput.value);
-
-                try {
-                    errorMessage.textContent = '';
-                    outputImage.style.display = 'none'; // Hide the image during processing
-
-                    const response = await fetch('/predict', { // Use relative path for flexibility
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Failed to process image');
-                    }
-
-                    const blob = await response.blob();
-                    const imageUrl = URL.createObjectURL(blob);
-                    outputImage.src = imageUrl;
-                    outputImage.style.display = 'block'; // Show the image
-                } catch (error) {
-                    console.error('Error:', error);
-                    errorMessage.textContent = error.message || 'Error processing image. Please try again.';
-                }
+            fetch("/predict", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    image_url: imageUrl,
+                    polyline_height_cm: polylineHeight,
+                    polyline_width_cm: polylineWidth
+                })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                // Display the predicted image
+                let img = document.createElement("img");
+                img.src = URL.createObjectURL(blob);
+                document.getElementById("predictionResult").innerHTML = "";
+                document.getElementById("predictionResult").appendChild(img);
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                document.getElementById("predictionResult").innerHTML = "Prediction failed";
             });
         });
     </script>
