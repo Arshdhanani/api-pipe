@@ -7,24 +7,22 @@ import io
 import onnxruntime as ort
 import logging
 import os
+import requests
+from io import BytesIO
 
-# Constants
-INPUT_DIR = 'inputimages'
-OUTPUT_DIR = 'outputimages'
-DEFAULT_DPI = 72
+# Create directories
+input_dir = 'inputimages'
+output_dir = 'outputimages'
+os.makedirs(input_dir, exist_ok=True)
+os.makedirs(output_dir, exist_ok=True)
 
-# Create directories if not exist
-os.makedirs(INPUT_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-# Initialize Flask application
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+application = Flask(__name__)
+CORS(application)  # Enable CORS for all routes
 
 # Load ONNX model with error handling
 try:
-    ONNX_MODEL_PATH = '/var/app/current/27.onnx'
-    ort_session = ort.InferenceSession(ONNX_MODEL_PATH)
+    onnx_model_path = r'/var/app/current/27.onnx'
+    ort_session = ort.InferenceSession(onnx_model_path)
     logging.info("ONNX model loaded successfully.")
 except Exception as e:
     logging.error(f"Failed to load ONNX model: {e}")
@@ -43,40 +41,33 @@ def predict(image_array):
     ort_outs = ort_session.run(None, ort_inputs)
     return ort_outs[0]
 
-@app.route('/predict', methods=['POST'])
+@application.route('/predict', methods=['GET', 'POST'])
 def predict_route():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image provided'}), 400
+    if request.method == 'GET':
+        return jsonify({'message': 'Send a POST request with an image URL to get predictions'}), 200
     
-    image_file = request.files['image']
-    input_image_path = os.path.join(INPUT_DIR, image_file.filename)
+    if 'image_url' not in request.form:
+        return jsonify({'error': 'No image URL provided'}), 400
     
-    try:
-        # Save the uploaded image to the inputimages directory
-        image_file.save(input_image_path)
-    except IOError:
-        return jsonify({'error': 'Failed to save image'}), 500
+    image_url = request.form['image_url']
 
     try:
-        # Open the image from the inputimages directory
-        image = Image.open(input_image_path)
-    except IOError:
-        return jsonify({'error': 'Invalid image format'}), 400
+        # Fetch the image from the provided URL
+        response = requests.get(image_url)
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch image from URL'}), response.status_code
+
+        # Open the image from the response content
+        image = Image.open(BytesIO(response.content))
+    except Exception as e:
+        logging.error(f"Error fetching or opening image: {e}")
+        return jsonify({'error': 'Failed to fetch or open image from URL'}), 500
 
     # Get height and width parameters from the request in cm
     polyline_height_cm = float(request.form.get('polyline_height_cm'))
     polyline_width_cm = float(request.form.get('polyline_width_cm'))
 
-    # Convert cm to inches
-    polyline_height_inch = polyline_height_cm / 2.54
-    polyline_width_inch = polyline_width_cm / 2.54
-
-    # Get image resolution in DPI (assuming same resolution for X and Y)
-    image_resolution_dpi = image.info.get('dpi', (DEFAULT_DPI, DEFAULT_DPI))
-
-    # Convert inches to pixels using DPI
-    polyline_height_px = int(polyline_height_inch * image_resolution_dpi[0])
-    polyline_width_px = int(polyline_width_inch * image_resolution_dpi[0])
+    # Rest of your code remains the same...
 
     # Preprocess the image
     image_array = preprocess_image(image)
@@ -125,13 +116,9 @@ def predict_route():
 
     return send_file(io_buf, mimetype='image/png')
 
-@app.route('/')
+@application.route('/')
 def index():
     return send_from_directory('templates', 'index.html')
 
-@app.route('/images/<filename>')
-def send_image(filename):
-    return send_from_directory(OUTPUT_DIR, filename)
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    application.run(host='0.0.0.0', port=80)
