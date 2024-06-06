@@ -39,8 +39,11 @@ def predict(image_array):
     ort_outs = ort_session.run(None, ort_inputs)
     return ort_outs[0]
 
-@application.route('/predict', methods=['POST'])
+@application.route('/predict', methods=['GET', 'POST'])
 def predict_route():
+    if request.method == 'GET':
+        return jsonify({'message': 'Send a POST request with an image to get predictions'}), 200
+    
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
     
