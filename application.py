@@ -9,8 +9,8 @@ import logging
 import os
 
 # Create directories
-input_dir = r'/var/app/current/inputimages'
-output_dir = r'/var/app/current/outputimages'
+input_dir = r'inputimages'
+output_dir = r'outputimages'
 os.makedirs(input_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
 
@@ -111,10 +111,6 @@ def predict_route():
 
         # Draw polyline on the image
         cv2.polylines(resized_image, [scaled_points], isClosed=True, color=(0, 255, 0), thickness=1)
-
-        # Save the output image to the outputimages directory
-        output_image_path = os.path.join(output_dir, f"{image_file.filename.split('.')[0]}_output.png")
-        cv2.imwrite(output_image_path, resized_image)
     except Exception as e:
         logging.error(f"Image processing error: {e}")
         return jsonify({'error': 'Image processing failed'}), 500
@@ -128,19 +124,16 @@ def predict_route():
 
     return send_file(io_buf, mimetype='image/png')
 
-@application.route('/output')
-def output_images():
-    image_files = os.listdir(output_dir)
-    image_links = [f'<a href="/output/{filename}">{filename}</a>' for filename in image_files]
-    return '<br>'.join(image_links)
-
-@application.route('/output/<filename>')
-def output_image(filename):
-    return send_from_directory(output_dir, filename)
-
 @application.route('/')
 def index():
     return send_from_directory('templates', 'index.html')
+
+@application.route('/outputimages/')
+def serve_output_images():
+    # Get a list of all image files in the outputimages directory
+    image_files = os.listdir(output_dir)
+    # Return the list of image files as a JSON response
+    return {'images': image_files}
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=80)
