@@ -128,9 +128,9 @@ def predict_route():
 def index():
     return send_from_directory('templates', 'index.html')
 
-@application.route('/outputimages-path', methods=['GET'])
-def output_images_path():
-    return jsonify({'output_images_path': output_dir}), 200
+@app.route('/images/<filename>')
+def send_image(filename):
+    return send_from_directory('outputimages', filename)
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=80)
