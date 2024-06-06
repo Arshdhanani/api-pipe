@@ -7,12 +7,10 @@ import io
 import onnxruntime as ort
 import logging
 import os
-import requests
-from io import BytesIO
 
 # Create directories
-input_dir = r'/var/app/current/inputimages'
-output_dir = r'/var/app/current/outputimages'
+input_dir = 'inputimages'
+output_dir = 'outputimages'
 os.makedirs(input_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
 
@@ -44,30 +42,40 @@ def predict(image_array):
 @application.route('/predict', methods=['GET', 'POST'])
 def predict_route():
     if request.method == 'GET':
-        return jsonify({'message': 'Send a POST request with an image URL to get predictions'}), 200
+        return jsonify({'message': 'Send a POST request with an image to get predictions'}), 200
     
-    if 'image_url' not in request.form:
-        return jsonify({'error': 'No image URL provided'}), 400
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
     
-    image_url = request.form['image_url']
+    image_file = request.files['image']
+    input_image_path = os.path.join(input_dir, image_file.filename)
+    
+    try:
+        # Save the uploaded image to the inputimages directory
+        image_file.save(input_image_path)
+    except IOError:
+        return jsonify({'error': 'Failed to save image'}), 500
 
     try:
-        # Fetch the image from the provided URL
-        response = requests.get(image_url)
-        if response.status_code != 200:
-            return jsonify({'error': 'Failed to fetch image from URL'}), response.status_code
-
-        # Open the image from the response content
-        image = Image.open(BytesIO(response.content))
-    except Exception as e:
-        logging.error(f"Error fetching or opening image: {e}")
-        return jsonify({'error': 'Failed to fetch or open image from URL'}), 500
+        # Open the image from the inputimages directory
+        image = Image.open(input_image_path)
+    except IOError:
+        return jsonify({'error': 'Invalid image format'}), 400
 
     # Get height and width parameters from the request in cm
     polyline_height_cm = float(request.form.get('polyline_height_cm'))
     polyline_width_cm = float(request.form.get('polyline_width_cm'))
 
-    # Rest of your code remains the same...
+    # Convert cm to inches
+    polyline_height_inch = polyline_height_cm / 2.54
+    polyline_width_inch = polyline_width_cm / 2.54
+
+    # Get image resolution in DPI (assuming same resolution for X and Y)
+    image_resolution_dpi = image.info.get('dpi', (72, 72))  # Default DPI if not specified
+
+    # Convert inches to pixels using DPI
+    polyline_height_px = int(polyline_height_inch * image_resolution_dpi[0])
+    polyline_width_px = int(polyline_width_inch * image_resolution_dpi[0])
 
     # Preprocess the image
     image_array = preprocess_image(image)
@@ -103,6 +111,10 @@ def predict_route():
 
         # Draw polyline on the image
         cv2.polylines(resized_image, [scaled_points], isClosed=True, color=(0, 255, 0), thickness=1)
+
+        # Save the output image to the outputimages directory
+        output_image_path = os.path.join(output_dir, f"{image_file.filename.split('.')[0]}_output.png")
+        cv2.imwrite(output_image_path, resized_image)
     except Exception as e:
         logging.error(f"Image processing error: {e}")
         return jsonify({'error': 'Image processing failed'}), 500
@@ -115,6 +127,10 @@ def predict_route():
     io_buf = io.BytesIO(buffer)
 
     return send_file(io_buf, mimetype='image/png')
+
+@application.route('/output/<filename>')
+def output_image(filename):
+    return send_from_directory(output_dir, filename)
 
 @application.route('/')
 def index():
