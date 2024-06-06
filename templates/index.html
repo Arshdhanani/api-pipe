@@ -3,38 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Upload</title>
+    <title>Image Processing App</title>
 </head>
 <body>
-    <h1>Image Upload</h1>
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="image" id="imageInput" accept="image/*" required><br><br>
+    <h1>Image Processing App</h1>
+    <form id="imageForm" enctype="multipart/form-data">
+        <label for="image">Upload Image:</label>
+        <input type="file" id="image" name="image" accept="image/*" required>
+        <br>
         <label for="polyline_height_cm">Polyline Height (cm):</label>
-        <input type="number" name="polyline_height_cm" id="polyline_height_cm" min="1" step="any" required><br><br>
+        <input type="number" id="polyline_height_cm" name="polyline_height_cm" step="0.1" required>
+        <br>
         <label for="polyline_width_cm">Polyline Width (cm):</label>
-        <input type="number" name="polyline_width_cm" id="polyline_width_cm" min="1" step="any" required><br><br>
-        <button type="submit">Upload</button>
+        <input type="number" id="polyline_width_cm" name="polyline_width_cm" step="0.1" required>
+        <br>
+        <button type="submit">Submit</button>
     </form>
-    <div id="outputImageContainer"></div>
+    <div id="outputImages"></div>
 
     <script>
-        const form = document.getElementById('uploadForm');
-        const outputImageContainer = document.getElementById('outputImageContainer');
+        document.getElementById('imageForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('image', document.getElementById('image').files[0]);
+            formData.append('polyline_height_cm', document.getElementById('polyline_height_cm').value);
+            formData.append('polyline_width_cm', document.getElementById('polyline_width_cm').value);
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
             try {
                 const response = await fetch('/predict', {
                     method: 'POST',
                     body: formData
                 });
-                const blob = await response.blob();
-                const imageUrl = URL.createObjectURL(blob);
-                const image = document.createElement('img');
-                image.src = imageUrl;
-                outputImageContainer.innerHTML = '';
-                outputImageContainer.appendChild(image);
+                const imageData = await response.blob();
+                
+                // Display the processed image
+                const imgElement = document.createElement('img');
+                imgElement.src = URL.createObjectURL(imageData);
+                document.getElementById('outputImages').appendChild(imgElement);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Fetch and display available output images on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/output');
+                const imageList = await response.text();
+
+                // Display list of output images
+                document.getElementById('outputImages').innerHTML = imageList;
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -42,3 +61,4 @@
     </script>
 </body>
 </html>
+
