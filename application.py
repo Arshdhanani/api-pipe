@@ -9,8 +9,8 @@ import logging
 import os
 
 # Create directories
-input_dir = 'inputimages'
-output_dir = 'outputimages'
+input_dir = r'/var/app/current/inputimages'
+output_dir = r'/var/app/current/outputimages'
 os.makedirs(input_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
 
