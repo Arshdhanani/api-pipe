@@ -3,56 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Prediction</title>
+    <title>Image Upload</title>
 </head>
 <body>
-    <h1>Image Prediction</h1>
-    <form id="imageForm">
-        <label for="imageUrl">Image URL:</label>
-        <input type="text" id="imageUrl" name="imageUrl" required>
-        <br>
-        <label for="polylineHeight">Polyline Height (cm):</label>
-        <input type="number" id="polylineHeight" name="polylineHeight" required>
-        <br>
-        <label for="polylineWidth">Polyline Width (cm):</label>
-        <input type="number" id="polylineWidth" name="polylineWidth" required>
-        <br>
-        <input type="submit" value="Predict">
+    <h1>Image Upload</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="image" id="imageInput" accept="image/*" required><br><br>
+        <label for="polyline_height_cm">Polyline Height (cm):</label>
+        <input type="number" name="polyline_height_cm" id="polyline_height_cm" min="1" step="any" required><br><br>
+        <label for="polyline_width_cm">Polyline Width (cm):</label>
+        <input type="number" name="polyline_width_cm" id="polyline_width_cm" min="1" step="any" required><br><br>
+        <button type="submit">Upload</button>
     </form>
-
-    <div id="predictionResult"></div>
+    <div id="outputImageContainer"></div>
 
     <script>
-        document.getElementById("imageForm").addEventListener("submit", function(event) {
-            event.preventDefault();
+        const form = document.getElementById('uploadForm');
+        const outputImageContainer = document.getElementById('outputImageContainer');
 
-            let imageUrl = document.getElementById("imageUrl").value;
-            let polylineHeight = document.getElementById("polylineHeight").value;
-            let polylineWidth = document.getElementById("polylineWidth").value;
-
-            fetch("/predict", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    image_url: imageUrl,
-                    polyline_height_cm: polylineHeight,
-                    polyline_width_cm: polylineWidth
-                })
-            })
-            .then(response => response.blob())
-            .then(blob => {
-                // Display the predicted image
-                let img = document.createElement("img");
-                img.src = URL.createObjectURL(blob);
-                document.getElementById("predictionResult").innerHTML = "";
-                document.getElementById("predictionResult").appendChild(img);
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                document.getElementById("predictionResult").innerHTML = "Prediction failed";
-            });
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                const image = document.createElement('img');
+                image.src = imageUrl;
+                outputImageContainer.innerHTML = '';
+                outputImageContainer.appendChild(image);
+            } catch (error) {
+                console.error('Error:', error);
+            }
         });
     </script>
 </body>
