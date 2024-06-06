@@ -39,15 +39,18 @@ def predict(image_array):
     ort_outs = ort_session.run(None, ort_inputs)
     return ort_outs[0]
 
-@application.route('/predict', methods=['GET', 'POST'])
+@application.route('/predict', methods=['POST'])
 def predict_route():
-    if request.method == 'GET':
-        return jsonify({'message': 'Send a POST request with an image to get predictions'}), 200
-    
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
     
+    if 'polyline_height_cm' not in request.form or 'polyline_width_cm' not in request.form:
+        return jsonify({'error': 'Polyline height and width parameters are required'}), 400
+    
     image_file = request.files['image']
+    polyline_height_cm = float(request.form['polyline_height_cm'])
+    polyline_width_cm = float(request.form['polyline_width_cm'])
+    
     input_image_path = os.path.join(input_dir, image_file.filename)
     
     try:
@@ -61,10 +64,6 @@ def predict_route():
         image = Image.open(input_image_path)
     except IOError:
         return jsonify({'error': 'Invalid image format'}), 400
-
-    # Get height and width parameters from the request in cm
-    polyline_height_cm = float(request.form.get('polyline_height_cm'))
-    polyline_width_cm = float(request.form.get('polyline_width_cm'))
 
     # Convert cm to inches
     polyline_height_inch = polyline_height_cm / 2.54
@@ -111,6 +110,10 @@ def predict_route():
 
         # Draw polyline on the image
         cv2.polylines(resized_image, [scaled_points], isClosed=True, color=(0, 255, 0), thickness=1)
+        
+        # Save the processed image to the outputimages directory
+        output_image_path = os.path.join(output_dir, f"output_{image_file.filename}")
+        cv2.imwrite(output_image_path, resized_image)
     except Exception as e:
         logging.error(f"Image processing error: {e}")
         return jsonify({'error': 'Image processing failed'}), 500
@@ -122,11 +125,8 @@ def predict_route():
     
     io_buf = io.BytesIO(buffer)
 
-    return send_file(io_buf, mimetype='image/png')
-
-@application.route('/')
-def index():
-    return send_from_directory('templates', 'index.html')
+    # Return the processed image and the path of the output image
+    return send_file(io_buf, mimetype='image/png'), 200, {'Output-Image-Path': output_image_path}
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=80)
