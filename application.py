@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file, send_from_directory, url_for
 from flask_cors import CORS
 from PIL import Image
 import numpy as np
@@ -82,11 +82,13 @@ def predict_route():
         return jsonify({'error': 'Image processing failed'}), 500
 
     # Save output image
-    output_image_path = os.path.join(output_dir, 'output_' + image_file.filename)
+    output_image_filename = 'output_' + image_file.filename
+    output_image_path = os.path.join(output_dir, output_image_filename)
     cv2.imwrite(output_image_path, resized_image)
 
-    # Return the relative path of the output image
-    return jsonify({'output_image_path': '/output/' + 'output_' + image_file.filename})
+    # Return the full URL of the output image
+    output_image_url = url_for('output_file', filename=output_image_filename)
+    return jsonify({'output_image_url': output_image_url})
 
 @application.route('/output/<filename>')
 def output_file(filename):
