@@ -16,7 +16,7 @@ os.makedirs(input_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
 
 # Load the ONNX model
-onnx_model_path = r'C:\Users\dhana\Desktop\updated\27.onnx'
+onnx_model_path = r'/var/app/current/27.onnx'
 session = ort.InferenceSession(onnx_model_path)
 
 @app.route('/predict', methods=['POST'])
