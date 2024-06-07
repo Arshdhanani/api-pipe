@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< HEAD
     <title>Image Processing App</title>
     <style>
         body {
@@ -69,55 +68,53 @@
         <label for="polyline-width-cm">Polyline Width (cm):</label>
         <input type="number" id="polyline-width-cm" name="polyline-width-cm" required>
         <button type="submit">Upload and Process Image</button>
-=======
-    <title>Image Processing</title>
-</head>
-<body>
-    <h1>Image Processing</h1>
-    <form id="uploadForm" enctype="multipart/form-data">
-        <label for="image">Select Image:</label>
-        <input type="file" id="image" name="image"><br><br>
-        <label for="polyline_height_cm">Polyline Height (cm):</label>
-        <input type="number" id="polyline_height_cm" name="polyline_height_cm" step="any"><br><br>
-        <label for="polyline_width_cm">Polyline Width (cm):</label>
-        <input type="number" id="polyline_width_cm" name="polyline_width_cm" step="any"><br><br>
-        <button type="button" onclick="uploadImage()">Process Image</button>
->>>>>>> d54bc0fd7ebac5aed9393da84fbe3c1dd0400d4a
     </form>
-    <div id="result"></div>
-
+    <div id="result">
+        <h2>Processed Image:</h2>
+        <img id="output-image" src="" alt="Processed Image">
+        <div id="error-message"></div>
+    </div>
     <script>
-        function uploadImage() {
-            var formData = new FormData();
-            var fileInput = document.getElementById('image');
-            var heightInput = document.getElementById('polyline_height_cm');
-            var widthInput = document.getElementById('polyline_width_cm');
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadForm = document.getElementById('upload-form');
+            const fileInput = document.getElementById('file-input');
+            const polylineHeightInput = document.getElementById('polyline-height-cm');
+            const polylineWidthInput = document.getElementById('polyline-width-cm');
+            const outputImage = document.getElementById('output-image');
+            const errorMessage = document.getElementById('error-message');
 
-            if (!fileInput.files[0]) {
-                alert('Please select an image.');
-                return;
-            }
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
 
-            formData.append('image', fileInput.files[0]);
-            formData.append('polyline_height_cm', heightInput.value);
-            formData.append('polyline_width_cm', widthInput.value);
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+                formData.append('polyline_height_cm', polylineHeightInput.value);
+                formData.append('polyline_width_cm', polylineWidthInput.value);
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/predict');
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    var result = JSON.parse(xhr.responseText);
-                    if (result.error) {
-                        document.getElementById('result').innerHTML = '<p>Error: ' + result.error + '</p>';
-                    } else {
-                        document.getElementById('result').innerHTML = '<img src="data:image/png;base64,' + result.image + '" />';
+                try {
+                    errorMessage.textContent = '';
+                    outputImage.style.display = 'none'; // Hide the image during processing
+
+                    const response = await fetch('/predict', { // Use relative path for flexibility
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to process image');
                     }
-                } else {
-                    document.getElementById('result').innerHTML = '<p>Request failed with status: ' + xhr.status + '</p>';
+
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    outputImage.src = imageUrl;
+                    outputImage.style.display = 'block'; // Show the image
+                } catch (error) {
+                    console.error('Error:', error);
+                    errorMessage.textContent = error.message || 'Error processing image. Please try again.';
                 }
-            };
-            xhr.send(formData);
-        }
+            });
+        });
     </script>
 </body>
 </html>
