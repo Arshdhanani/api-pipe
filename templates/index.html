@@ -45,11 +45,23 @@
         #error-message {
             color: red;
         }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="file"],
+        input[type="number"] {
+            display: block;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>Image Processing App</h1>
     <form id="upload-form" enctype="multipart/form-data">
+        <label for="file-input">Choose an image:</label>
         <input type="file" id="file-input" accept="image/*" required>
         <label for="polyline-height-cm">Polyline Height (cm):</label>
         <input type="number" id="polyline-height-cm" name="polyline-height-cm" required>
