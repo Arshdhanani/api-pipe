@@ -6,18 +6,12 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 
-<<<<<<< HEAD
 app = Flask(__name__)
 CORS(app)
 
 # Paths for directories
 input_dir = 'input_images'
 output_dir = 'output_images'
-=======
-# Create directories
-input_dir = r'inputimages'
-output_dir = r'outputimages'
->>>>>>> d54bc0fd7ebac5aed9393da84fbe3c1dd0400d4a
 os.makedirs(input_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
 
@@ -71,13 +65,6 @@ def predict():
 @app.route('/')
 def index():
     return send_from_directory('templates', 'index.html')
-
-@application.route('/outputimages/')
-def serve_output_images():
-    # Get a list of all image files in the outputimages directory
-    image_files = os.listdir(output_dir)
-    # Return the list of image files as a JSON response
-    return {'images': image_files}
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=80)
