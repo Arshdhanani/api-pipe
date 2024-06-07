@@ -85,14 +85,8 @@ def predict_route():
     output_image_path = os.path.join(output_dir, 'output_' + image_file.filename)
     cv2.imwrite(output_image_path, resized_image)
 
-    # Convert the processed image to bytes
-    is_success, buffer = cv2.imencode(".png", resized_image)
-    if not is_success:
-        return jsonify({'error': 'Failed to encode image'}), 500
-    
-    io_buf = io.BytesIO(buffer)
-
-    return send_file(io_buf, mimetype='image/png')
+    # Return the path of the output image
+    return jsonify({'output_image_path': output_image_path})
 
 @application.route('/')
 def index():
