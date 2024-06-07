@@ -85,8 +85,12 @@ def predict_route():
     output_image_path = os.path.join(output_dir, 'output_' + image_file.filename)
     cv2.imwrite(output_image_path, resized_image)
 
-    # Return the path of the output image
-    return jsonify({'output_image_path': output_image_path})
+    # Return the relative path of the output image
+    return jsonify({'output_image_path': '/output/' + 'output_' + image_file.filename})
+
+@application.route('/output/<filename>')
+def output_file(filename):
+    return send_from_directory(output_dir, filename)
 
 @application.route('/')
 def index():
