@@ -19,7 +19,7 @@ CORS(application)  # Enable CORS for all routes
 
 # Load ONNX model with error handling
 try:
-    onnx_model_path = r'C:\Users\dhana\Desktop\updated\27.onnx'
+    onnx_model_path = r'/var/app/current/27.onnx'
     ort_session = ort.InferenceSession(onnx_model_path)
     logging.info("ONNX model loaded successfully.")
 except Exception as e:
