@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory, url_for
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from PIL import Image
 import numpy as np
@@ -39,11 +39,8 @@ def predict(image_array):
     ort_outs = ort_session.run(None, ort_inputs)
     return ort_outs[0]
 
-@application.route('/predict', methods=['GET', 'POST'])
+@application.route('/predict', methods=['POST'])
 def predict_route():
-    if request.method == 'GET':
-        return jsonify({'message': 'Send a POST request with an image to get predictions'}), 200
-
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
     
@@ -86,8 +83,8 @@ def predict_route():
     output_image_path = os.path.join(output_dir, output_image_filename)
     cv2.imwrite(output_image_path, resized_image)
 
-    # Return the full URL of the output image
-    output_image_url = url_for('output_file', filename=output_image_filename)
+    # Return the relative path of the output image along with the filename
+    output_image_url = f"/output/{output_image_filename}"
     return jsonify({'output_image_url': output_image_url})
 
 @application.route('/output/<filename>')
