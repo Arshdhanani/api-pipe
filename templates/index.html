@@ -37,6 +37,7 @@
     <div id="outputImageContainer">
         <h2>Processed Output</h2>
         <img id="outputImage" src="#" alt="Output Image">
+        <p id="outputImagePath"></p>
     </div>
     <script>
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
@@ -45,6 +46,7 @@
             const inputImage = document.getElementById('inputImage');
             const outputImageContainer = document.getElementById('outputImageContainer');
             const outputImage = document.getElementById('outputImage');
+            const outputImagePath = document.getElementById('outputImagePath');
 
             if (fileInput.files.length === 0) {
                 alert('Please select an image to upload');
@@ -73,8 +75,19 @@
                     throw new Error('Network response was not ok');
                 }
 
-                const blob = await response.blob();
-                const outputImageUrl = URL.createObjectURL(blob);
+                const result = await response.json();
+                const outputImagePathUrl = result.output_image_path;
+
+                // Display the path of the output image
+                outputImagePath.textContent = `Output Image Path: ${outputImagePathUrl}`;
+
+                // Fetch the actual image
+                const imageResponse = await fetch(outputImagePathUrl);
+                if (!imageResponse.ok) {
+                    throw new Error('Failed to fetch output image');
+                }
+                const imageBlob = await imageResponse.blob();
+                const outputImageUrl = URL.createObjectURL(imageBlob);
                 outputImage.src = outputImageUrl;
                 outputImageContainer.style.display = 'block';
             } catch (error) {
