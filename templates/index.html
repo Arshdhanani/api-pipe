@@ -76,19 +76,19 @@
                 }
 
                 const result = await response.json();
-                const outputImagePathUrl = result.output_image_path;
+                const outputImageUrl = result.output_image_url;
 
                 // Display the path of the output image
-                outputImagePath.textContent = `Output Image Path: ${outputImagePathUrl}`;
+                outputImagePath.textContent = `Output Image Path: ${outputImageUrl}`;
 
                 // Fetch the actual image
-                const imageResponse = await fetch(outputImagePathUrl);
+                const imageResponse = await fetch(outputImageUrl);
                 if (!imageResponse.ok) {
                     throw new Error('Failed to fetch output image');
                 }
                 const imageBlob = await imageResponse.blob();
-                const outputImageUrl = URL.createObjectURL(imageBlob);
-                outputImage.src = outputImageUrl;
+                const outputImageUrlObject = URL.createObjectURL(imageBlob);
+                outputImage.src = outputImageUrlObject;
                 outputImageContainer.style.display = 'block';
             } catch (error) {
                 console.error('Error during prediction:', error);
