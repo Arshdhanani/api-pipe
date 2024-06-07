@@ -3,96 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Upload and Prediction</title>
+    <title>Image Prediction</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 50px;
         }
-        #uploadForm {
+        #image-form {
             margin-bottom: 20px;
         }
-        #inputImage, #outputImage {
-            max-width: 500px;
-            max-height: 500px;
-            margin: 10px;
-        }
-        #outputImageContainer {
-            display: none;
+        #output-image {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Image Upload and Prediction</h1>
-    <form id="uploadForm">
-        <input type="file" id="imageInput" name="image" accept="image/*" required>
-        <button type="submit">Upload and Predict</button>
+    <h1>Image Prediction</h1>
+    <form id="image-form">
+        <input type="file" id="image-input" accept="image/*" required>
+        <button type="submit">Predict</button>
     </form>
-    <div>
-        <img id="inputImage" src="#" alt="Input Image" style="display: none;">
+    <div id="result">
+        <img id="output-image" src="" alt="Output Image" style="display:none;">
     </div>
-    <div id="outputImageContainer">
-        <h2>Processed Output</h2>
-        <img id="outputImage" src="#" alt="Output Image">
-        <p id="outputImagePath"></p>
-    </div>
-    <script>
-        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const fileInput = document.getElementById('imageInput');
-            const inputImage = document.getElementById('inputImage');
-            const outputImageContainer = document.getElementById('outputImageContainer');
-            const outputImage = document.getElementById('outputImage');
-            const outputImagePath = document.getElementById('outputImagePath');
 
-            if (fileInput.files.length === 0) {
-                alert('Please select an image to upload');
+    <script>
+        document.getElementById('image-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const imageInput = document.getElementById('image-input');
+            if (imageInput.files.length === 0) {
+                alert('Please select an image.');
                 return;
             }
 
-            const file = fileInput.files[0];
             const formData = new FormData();
-            formData.append('image', file);
-
-            // Display the selected input image
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                inputImage.src = e.target.result;
-                inputImage.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+            formData.append('image', imageInput.files[0]);
 
             try {
                 const response = await fetch('/predict', {
                     method: 'POST',
                     body: formData
                 });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
                 const result = await response.json();
-                const outputImageUrl = result.output_image_url;
-
-                // Display the path of the output image
-                outputImagePath.textContent = `Output Image Path: ${outputImageUrl}`;
-
-                // Fetch the actual image
-                const imageResponse = await fetch(outputImageUrl);
-                if (!imageResponse.ok) {
-                    throw new Error('Failed to fetch output image');
+                if (response.ok) {
+                    const outputImageUrl = result.output_image_url;
+                    const outputImage = document.getElementById('output-image');
+                    outputImage.src = outputImageUrl;
+                    outputImage.style.display = 'block';
+                } else {
+                    alert(result.error || 'Prediction failed.');
                 }
-                const imageBlob = await imageResponse.blob();
-                const outputImageUrlObject = URL.createObjectURL(imageBlob);
-                outputImage.src = outputImageUrlObject;
-                outputImageContainer.style.display = 'block';
             } catch (error) {
-                console.error('Error during prediction:', error);
-                alert('Failed to process image');
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
             }
         });
     </script>
