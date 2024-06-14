@@ -1,14 +1,12 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from PIL import Image
 import numpy as np
 import cv2
-import io
-import onnxruntime as ort
-import logging
 import os
 import boto3
-from flask_sqlalchemy import SQLAlchemy
+import onnxruntime as ort
+import logging
 
 # Create directories if they do not exist
 input_dir = 'inputimages'
@@ -31,20 +29,7 @@ except Exception as e:
 # S3 configuration
 s3_bucket = 'databaseio'
 s3_region = 'us-east-1'
-
 s3_client = boto3.client('s3', region_name=s3_region)
-
-# Database configuration
-application.config['postgresql://admin:Arsh1234@database-1.cwxr8ws8totc.us-east-1.rds.amazonaws.com:3306/database-1'] = os.getenv('postgresql://admin:Arsh1234@database-1.cwxr8ws8totc.us-east-1.rds.amazonaws.com:3306/database-1')
-db = SQLAlchemy(application)
-
-class ImageModel(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(256), nullable=False)
-    s3_key = db.Column(db.String(256), nullable=False)
-    processed = db.Column(db.Boolean, default=False)
-
-db.create_all()
 
 def preprocess_image(image):
     # Resize and normalize the image
@@ -77,11 +62,6 @@ def predict_route():
     except Exception as e:
         logging.error(f"Failed to upload image to S3: {e}")
         return jsonify({'error': 'Failed to upload image'}), 500
-
-    # Save metadata to the database
-    new_image = ImageModel(filename=image_file.filename, s3_key=s3_key)
-    db.session.add(new_image)
-    db.session.commit()
 
     try:
         # Open the image from the temporary location
@@ -117,10 +97,6 @@ def predict_route():
     try:
         output_s3_key = f"outputimages/{output_image_filename}"
         s3_client.upload_file(output_image_path, s3_bucket, output_s3_key)
-        
-        # Update database entry to mark the image as processed
-        new_image.processed = True
-        db.session.commit()
     except Exception as e:
         logging.error(f"Failed to upload output image to S3: {e}")
         return jsonify({'error': 'Failed to upload output image'}), 500
