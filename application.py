@@ -30,12 +30,12 @@ except Exception as e:
 
 # S3 configuration
 s3_bucket = 'databaseio'
-s3_region = 'us-east-1'
+s3_region = 'US East (N. Virginia) us-east-1'
 
 s3_client = boto3.client('s3', region_name=s3_region)
 
 # Database configuration
-application.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('postgresql://admin:Arsh1234@database-1.cwxr8ws8totc.us-east-1.rds.amazonaws.com:3306/database-1')
+application.config['postgresql://admin:Arsh1234@database-1.cwxr8ws8totc.us-east-1.rds.amazonaws.com:3306/database-1'] = os.getenv('postgresql://admin:Arsh1234@database-1.cwxr8ws8totc.us-east-1.rds.amazonaws.com:3306/database-1')
 db = SQLAlchemy(application)
 
 class ImageModel(db.Model):
