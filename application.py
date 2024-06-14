@@ -8,6 +8,9 @@ import boto3
 import onnxruntime as ort
 import logging
 
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
 # Create directories if they do not exist
 input_dir = 'inputimages'
 output_dir = 'outputimages'
@@ -47,6 +50,7 @@ def predict(image_array):
 @application.route('/predict', methods=['POST'])
 def predict_route():
     if 'image' not in request.files:
+        logging.error("No image provided in the request.")
         return jsonify({'error': 'No image provided'}), 400
 
     image_file = request.files['image']
@@ -67,6 +71,7 @@ def predict_route():
         # Open the image from the temporary location
         image = Image.open(input_image_path)
     except IOError:
+        logging.error("Invalid image format.")
         return jsonify({'error': 'Invalid image format'}), 400
 
     # Preprocess the image
