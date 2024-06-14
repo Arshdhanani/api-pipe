@@ -30,7 +30,7 @@ except Exception as e:
 
 # S3 configuration
 s3_bucket = 'databaseio'
-s3_region = 'US East (N. Virginia) us-east-1'
+s3_region = 'us-east-1'
 
 s3_client = boto3.client('s3', region_name=s3_region)
 
