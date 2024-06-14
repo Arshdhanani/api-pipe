@@ -35,17 +35,25 @@ s3_region = 'us-east-1'
 s3_client = boto3.client('s3', region_name=s3_region)
 
 def preprocess_image(image):
-    # Resize and normalize the image
-    new_image = image.resize((224, 224))
-    new_image_array = np.array(new_image) / 255.0
-    new_image_array = np.expand_dims(new_image_array, axis=0).astype(np.float32)
-    return new_image_array
+    try:
+        # Resize and normalize the image
+        new_image = image.resize((224, 224))
+        new_image_array = np.array(new_image) / 255.0
+        new_image_array = np.expand_dims(new_image_array, axis=0).astype(np.float32)
+        return new_image_array
+    except Exception as e:
+        logging.error(f"Error in preprocess_image: {e}")
+        raise
 
 def predict(image_array):
-    # Run the ONNX model
-    ort_inputs = {ort_session.get_inputs()[0].name: image_array}
-    ort_outs = ort_session.run(None, ort_inputs)
-    return ort_outs[0]
+    try:
+        # Run the ONNX model
+        ort_inputs = {ort_session.get_inputs()[0].name: image_array}
+        ort_outs = ort_session.run(None, ort_inputs)
+        return ort_outs[0]
+    except Exception as e:
+        logging.error(f"Error in predict: {e}")
+        raise
 
 @application.route('/predict', methods=['POST'])
 def predict_route():
@@ -70,12 +78,16 @@ def predict_route():
     try:
         # Open the image from the temporary location
         image = Image.open(input_image_path)
-    except IOError:
-        logging.error("Invalid image format.")
+    except IOError as e:
+        logging.error(f"Invalid image format: {e}")
         return jsonify({'error': 'Invalid image format'}), 400
 
     # Preprocess the image
-    image_array = preprocess_image(image)
+    try:
+        image_array = preprocess_image(image)
+    except Exception as e:
+        logging.error(f"Error in image preprocessing: {e}")
+        return jsonify({'error': 'Image preprocessing failed'}), 500
 
     # Predict using the ONNX model
     try:
@@ -96,7 +108,11 @@ def predict_route():
     # Save output image
     output_image_filename = 'output_' + image_file.filename
     output_image_path = os.path.join(output_dir, output_image_filename)
-    cv2.imwrite(output_image_path, resized_image)
+    try:
+        cv2.imwrite(output_image_path, resized_image)
+    except Exception as e:
+        logging.error(f"Failed to save output image: {e}")
+        return jsonify({'error': 'Failed to save output image'}), 500
 
     # Upload the output image to S3
     try:
