@@ -3,42 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Prediction</title>
+    <title>Image Processing App</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
             margin: 0;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            background: #fff;
             padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        #image-form {
-            margin-bottom: 20px;
+        input[type="file"] {
+            margin-bottom: 15px;
         }
-        #output-image {
-            max-width: 100%;
-            border: 1px solid #ddd;
+        button {
+            padding: 10px 20px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #outputImage {
             margin-top: 20px;
+            max-width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            display: none;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Image Prediction</h1>
-    <form id="image-form">
-        <input type="file" id="image-input" accept="image/*" required>
-        <button type="submit">Predict</button>
+    <h1>Image Processing App</h1>
+    <form id="uploadForm">
+        <input type="file" id="imageInput" accept="image/*" required />
+        <button type="submit">Upload and Process</button>
     </form>
-    <div id="result">
-        <img id="output-image" src="" alt="Output Image" style="display:none;">
-    </div>
+    <img id="outputImage" src="" alt="Processed Image" />
+    <div id="errorMessage" class="error"></div>
 
     <script>
-        document.getElementById('image-form').addEventListener('submit', async function(event) {
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
             event.preventDefault();
-            const imageInput = document.getElementById('image-input');
+            const imageInput = document.getElementById('imageInput');
+            const errorMessage = document.getElementById('errorMessage');
+            const outputImage = document.getElementById('outputImage');
+
             if (imageInput.files.length === 0) {
-                alert('Please select an image.');
+                errorMessage.textContent = 'Please select an image to upload.';
                 return;
             }
 
@@ -50,18 +83,20 @@
                     method: 'POST',
                     body: formData
                 });
+
                 const result = await response.json();
+
                 if (response.ok) {
-                    const outputImageUrl = result.output_image_url;
-                    const outputImage = document.getElementById('output-image');
-                    outputImage.src = outputImageUrl;
+                    outputImage.src = result.output_image_url;
                     outputImage.style.display = 'block';
+                    errorMessage.textContent = '';
                 } else {
-                    alert(result.error || 'Prediction failed.');
+                    outputImage.style.display = 'none';
+                    errorMessage.textContent = result.error;
                 }
             } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred while processing your request.');
+                outputImage.style.display = 'none';
+                errorMessage.textContent = 'An error occurred while processing the image.';
             }
         });
     </script>
