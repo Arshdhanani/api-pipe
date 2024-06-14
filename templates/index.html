@@ -3,102 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Processing App</title>
+    <title>Image Upload and Processing</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        h1 {
-            color: #333;
-        }
-        form {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        input[type="file"] {
-            margin-bottom: 15px;
+        .container {
+            max-width: 600px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        button {
-            padding: 10px 20px;
-            border: none;
-            background: #007bff;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        #outputImage {
+        .image-container {
             margin-top: 20px;
-            max-width: 100%;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            display: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .error {
-            color: red;
-            margin-top: 10px;
+        .image-container img {
+            max-width: 100%;
+        }
+        .loading {
+            margin-top: 20px;
+            display: none;
+            font-size: 1.2em;
+            color: #333;
         }
     </style>
 </head>
 <body>
-    <h1>Image Processing App</h1>
+
+<div class="container">
+    <h1>Image Upload and Processing</h1>
     <form id="uploadForm">
-        <input type="file" id="imageInput" accept="image/*" required />
+        <input type="file" id="imageInput" accept="image/*" required>
         <button type="submit">Upload and Process</button>
     </form>
-    <img id="outputImage" src="" alt="Processed Image" />
-    <div id="errorMessage" class="error"></div>
+    <div class="loading" id="loadingMessage">Processing your image...</div>
+    <div class="image-container" id="imageContainer"></div>
+</div>
 
-    <script>
-        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const imageInput = document.getElementById('imageInput');
-            const errorMessage = document.getElementById('errorMessage');
-            const outputImage = document.getElementById('outputImage');
+<script>
+    document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
 
-            if (imageInput.files.length === 0) {
-                errorMessage.textContent = 'Please select an image to upload.';
-                return;
+        const loadingMessage = document.getElementById('loadingMessage');
+        loadingMessage.style.display = 'block';
+
+        const imageInput = document.getElementById('imageInput');
+        const file = imageInput.files[0];
+
+        if (!file) {
+            alert('Please select an image file.');
+            loadingMessage.style.display = 'none';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to process the image.');
             }
 
-            const formData = new FormData();
-            formData.append('image', imageInput.files[0]);
+            const result = await response.json();
+            const imageUrl = result.output_image_url;
 
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    body: formData
-                });
+            const imageContainer = document.getElementById('imageContainer');
+            imageContainer.innerHTML = `<h2>Processed Image:</h2><img src="${imageUrl}" alt="Processed Image">`;
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            loadingMessage.style.display = 'none';
+        }
+    });
+</script>
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    outputImage.src = result.output_image_url;
-                    outputImage.style.display = 'block';
-                    errorMessage.textContent = '';
-                } else {
-                    outputImage.style.display = 'none';
-                    errorMessage.textContent = result.error;
-                }
-            } catch (error) {
-                outputImage.style.display = 'none';
-                errorMessage.textContent = 'An error occurred while processing the image.';
-            }
-        });
-    </script>
 </body>
 </html>
