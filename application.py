@@ -15,7 +15,7 @@ import os
 s3_client = boto3.client('s3', config=Config(signature_version='s3v4'))
 
 # Set the S3 bucket name from environment variable
-S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+S3_BUCKET_NAME = os.getenv('s3flask ')
 
 application = Flask(__name__)
 CORS(application)  # Enable CORS for all routes
